@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -103,6 +100,7 @@ namespace Interceptor
             InterceptionDriver.SetFilter(context, InterceptionDriver.IsMouse, (Int32) MouseFilterMode);
 
             Stroke stroke = new Stroke();
+            var isShiftPressed = false;
 
             while (InterceptionDriver.Receive(context, deviceId = InterceptionDriver.Wait(context), ref stroke, 1) > 0)
             {
@@ -128,8 +126,42 @@ namespace Interceptor
                 {
                     if (OnKeyPressed != null)
                     {
-                        var args = new KeyPressedEventArgs() { Key = stroke.Key.Code, State = stroke.Key.State};
-                        OnKeyPressed(this, args);
+                        var hardwareIdBuffer = new byte[500];
+                        var length = InterceptionDriver.GetHardwareId(context, deviceId, hardwareIdBuffer, 500);
+                        var hardwareId = "";
+
+                        var nullCount = 0;
+                        for (var i = 0; i < length; i++)
+                        {
+                            if (hardwareIdBuffer[i] == 0)
+                            {
+                                nullCount++;
+                                continue;
+                            }
+
+                            if (nullCount > 2)
+                            {
+                                hardwareId += "; ";
+                            }
+
+                            nullCount = 0;
+                            hardwareId += (char)hardwareIdBuffer[i];
+                        }
+
+                        //If you need to use caps lock then be sure to have KeyboardFilterMode.All set for best reuslt
+                        var isCapsLockOn = Control.IsKeyLocked(System.Windows.Forms.Keys.CapsLock);
+                        if (stroke.Key.Code == Keys.LeftShift || stroke.Key.Code == Keys.RightShift)
+                            isShiftPressed = stroke.Key.State == KeyState.Down;
+
+                        var args = new KeyPressedEventArgs()
+                        {
+                            Key = stroke.Key.Code,
+                            State = stroke.Key.State,
+                            HardwareId = hardwareId,
+                            KeyChar = KeyEnumToCharacter(stroke.Key.Code, isCapsLockOn, isShiftPressed)
+                        };
+
+                        OnKeyPressed?.Invoke(this, args);
 
                         if (args.Handled)
                         {
@@ -347,6 +379,143 @@ namespace Interceptor
                     return new Tuple<Keys, bool>(Keys.Space, true);
                 default:
                     return new Tuple<Keys, bool>(Keys.ForwardSlashQuestionMark, true);
+            }
+        }
+
+        /// <summary>
+        /// Converts a key enum to char.
+        /// </summary>
+        private char KeyEnumToCharacter(Keys keys, bool isCapsLockOn, bool isShiftPressed)
+        {
+            var capitalizeCharacter = (isCapsLockOn && !isShiftPressed) || (!isCapsLockOn && isShiftPressed);
+            switch (keys)
+            {
+                case Keys.A:
+                    return capitalizeCharacter ? 'A' : 'a';
+                case Keys.B:
+                    return capitalizeCharacter ? 'B' : 'b';
+                case Keys.C:
+                    return capitalizeCharacter ? 'C' : 'c';
+                case Keys.D:
+                    return capitalizeCharacter ? 'D' : 'd';
+                case Keys.E:
+                    return capitalizeCharacter ? 'E' : 'e';
+                case Keys.F:
+                    return capitalizeCharacter ? 'F' : 'f';
+                case Keys.G:
+                    return capitalizeCharacter ? 'G' : 'g';
+                case Keys.H:
+                    return capitalizeCharacter ? 'H' : 'h';
+                case Keys.I:
+                    return capitalizeCharacter ? 'I' : 'i';
+                case Keys.J:
+                    return capitalizeCharacter ? 'J' : 'j';
+                case Keys.K:
+                    return capitalizeCharacter ? 'K' : 'k';
+                case Keys.L:
+                    return capitalizeCharacter ? 'L' : 'l';
+                case Keys.M:
+                    return capitalizeCharacter ? 'M' : 'm';
+                case Keys.N:
+                    return capitalizeCharacter ? 'N' : 'n';
+                case Keys.O:
+                    return capitalizeCharacter ? 'O' : 'o';
+                case Keys.P:
+                    return capitalizeCharacter ? 'P' : 'p';
+                case Keys.Q:
+                    return capitalizeCharacter ? 'Q' : 'q';
+                case Keys.R:
+                    return capitalizeCharacter ? 'R' : 'r';
+                case Keys.S:
+                    return capitalizeCharacter ? 'S' : 's';
+                case Keys.T:
+                    return capitalizeCharacter ? 'T' : 't';
+                case Keys.U:
+                    return capitalizeCharacter ? 'U' : 'u';
+                case Keys.V:
+                    return capitalizeCharacter ? 'V' : 'v';
+                case Keys.W:
+                    return capitalizeCharacter ? 'W' : 'w';
+                case Keys.X:
+                    return capitalizeCharacter ? 'X' : 'x';
+                case Keys.Y:
+                    return capitalizeCharacter ? 'Y' : 'y';
+                case Keys.Z:
+                    return capitalizeCharacter ? 'Z' : 'z';
+                case Keys.One:
+                    return isShiftPressed ? '!' : '1';
+                case Keys.Two:
+                    return isShiftPressed ? '@' : '2';
+                case Keys.Three:
+                    return isShiftPressed ? '#' : '3';
+                case Keys.Four:
+                    return isShiftPressed ? '$' : '4';
+                case Keys.Five:
+                    return isShiftPressed ? '%' : '5';
+                case Keys.Six:
+                    return isShiftPressed ? '^' : '6';
+                case Keys.Seven:
+                    return isShiftPressed ? '&' : '7';
+                case Keys.Eight:
+                    return isShiftPressed ? '*' : '8';
+                case Keys.Nine:
+                    return isShiftPressed ? '(' : '9';
+                case Keys.Zero:
+                    return isShiftPressed ? ')' : '0';
+                case Keys.DashUnderscore:
+                    return isShiftPressed ? '_' : '-';
+                case Keys.PlusEquals:
+                    return isShiftPressed ? '+' : '=';
+                case Keys.OpenBracketBrace:
+                    return isShiftPressed ? '{' : '[';
+                case Keys.CloseBracketBrace:
+                    return isShiftPressed ? '}' : ']';
+                case Keys.SemicolonColon:
+                    return isShiftPressed ? ':' : ';';
+                case Keys.SingleDoubleQuote:
+                    return isShiftPressed ? '"' : '\'';
+                case Keys.CommaLeftArrow:
+                    return isShiftPressed ? '<' : ',';
+                case Keys.PeriodRightArrow:
+                    return isShiftPressed ? '>' : '.';
+                case Keys.ForwardSlashQuestionMark:
+                    return isShiftPressed ? '?' : '/';
+                case Keys.BackslashPipe:
+                    return isShiftPressed ? '|' : '\\';
+                case Keys.Tilde:
+                    return isShiftPressed ? '~' : '`';
+                case Keys.Space:
+                    return ' ';
+                case Keys.Enter:
+                    return (char)13;
+                case Keys.Numpad0:
+                    return '0';
+                case Keys.Numpad1:
+                    return '1';
+                case Keys.Numpad2:
+                    return '2';
+                case Keys.Numpad3:
+                    return '3';
+                case Keys.Numpad4:
+                    return '4';
+                case Keys.Numpad5:
+                    return '5';
+                case Keys.Numpad6:
+                    return '6';
+                case Keys.Numpad7:
+                    return '7';
+                case Keys.Numpad8:
+                    return '8';
+                case Keys.Numpad9:
+                    return '9';
+                case Keys.NumpadAsterisk:
+                    return '*';
+                case Keys.NumpadMinus:
+                    return '-';
+                case Keys.NumpadPlus:
+                    return '+';
+                default:
+                    return (char)0;
             }
         }
 
