@@ -148,17 +148,19 @@ namespace Interceptor
                             hardwareId += (char)hardwareIdBuffer[i];
                         }
 
-                        //If you need to use caps lock then be sure to have KeyboardFilterMode.All set for best reuslt
+                        //If you need to get capital letters then be sure to have KeyboardFilterMode.All set and only get KeyState.Down codes
                         var isCapsLockOn = Control.IsKeyLocked(System.Windows.Forms.Keys.CapsLock);
                         if (stroke.Key.Code == Keys.LeftShift || stroke.Key.Code == Keys.RightShift)
                             isShiftPressed = stroke.Key.State == KeyState.Down;
+
+                        var asciiKeyCode = (int)KeyEnumToCharacter(stroke.Key.Code, isCapsLockOn, isShiftPressed);
 
                         var args = new KeyPressedEventArgs()
                         {
                             Key = stroke.Key.Code,
                             State = stroke.Key.State,
                             HardwareId = hardwareId,
-                            KeyChar = KeyEnumToCharacter(stroke.Key.Code, isCapsLockOn, isShiftPressed)
+                            AsciiKeyCode = asciiKeyCode
                         };
 
                         OnKeyPressed?.Invoke(this, args);

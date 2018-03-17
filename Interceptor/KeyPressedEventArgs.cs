@@ -8,6 +8,6 @@ namespace Interceptor
         public KeyState State { get; set; }
         public bool Handled { get; set; }
         public string HardwareId { get; set; }
-        public char KeyChar { get; set; }
+        public int AsciiKeyCode { get; set; }
     }
 }
